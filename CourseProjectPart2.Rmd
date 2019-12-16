@@ -1,0 +1,99 @@
+---
+title: "Statistical Inference Project Part 2: Data Analysis"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+In this project we are going to explore and do some basic analysis of the ToothGrowth data set available in R.
+
+```{r, echo=TRUE}
+library(ggplot2)
+library(dplyr)
+library(datasets)
+RawData <- ToothGrowth
+```
+
+## Basic Summaries
+
+We explore the structure of the data and the overall summary.
+
+```{r, echo=TRUE}
+head(RawData)
+summary(RawData)
+str(RawData)
+
+Summary_1 <- RawData %>% 
+    group_by(supp,dose) %>%
+    summarize(lenmean=mean(len), lensd=sd(len), count = n())
+print(Summary_1)
+```
+
+## Plots
+
+First we transform dose to factor and then we make some box plots to see the difference in means for each supplement and dosage.
+```{r, echo=TRUE}
+RawData$dose <- as.factor(RawData$dose)
+```
+
+Box plot showing the difference by methods
+```{r, echo=TRUE}
+ggplot(data = RawData, aes(x=RawData$dose, y = RawData$len)) + geom_boxplot(aes(fill = RawData$dose)) + labs(title = "Tooth Length vs Dose Amount by method", x = "Dose", y = "Tooth Length") + facet_grid(~RawData$supp)
+
+```
+Box plot showing the difference by dose
+
+```{r, echo=TRUE}
+ggplot(data = RawData, aes(x=RawData$supp, y = RawData$len)) + geom_boxplot(aes(fill = RawData$supp)) + labs(title = "Tooth Length vs Dose Amount by dose", x = "Supplement", y = "Tooth Length") + facet_grid(~RawData$dose)
+```
+
+##3. Using confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose.
+
+1. Comparing if there is a difference between the supply method and length
+```{r, echo=TRUE}
+t.test(RawData$len ~ RawData$supp, paired = FALSE,var.equal = FALSE, data = RawData)
+
+```
+
+In this case, the confidence interval includes 0 and the p-value is 0.06 which is greater than 0.05. So we fail to reject the Null Hypothesis (there is no difference in means).
+
+2. We can subdivide the data and do the analysis for each level of dosage (0.5,1 and 2)
+
+2.1 Testing dosage = 0.5 (lowdose) for OJ and VC
+```{r, echo=TRUE}
+lowdose <- RawData[RawData$dose == 0.5,]
+t.test(lowdose$len ~ lowdose$supp, paired = FALSE, var.equal = FALSE, data = lowdose)
+```
+The confidence interval does not include 0 and the p-value is less than 0.05 so we can reject the Null hypothesis. Therefore there is a difference between the methods with a 0.5 dose.
+
+2.2 Testing dosage = 1 (middose) for OJ and VC
+```{r, echo=TRUE}
+middose <- RawData[RawData$dose == 1,]
+t.test(middose$len ~ middose$supp, paired = FALSE, var.equal = FALSE, data = middose)
+```
+The confidence interval does not include 0 and the p-value is less than 0.05 so we can reject the Null hypothesis. Therefore there is a difference between the methods with a 1 dose.
+
+2.3 Testing dosage = 2 (highdose) for OJ and VC
+```{r, echo=TRUE}
+highdose <- RawData[RawData$dose == 2,]
+t.test(highdose$len ~ highdose$supp, paired = FALSE, var.equal = FALSE, data = highdose)
+```
+
+The confidence interval includes 0 and the p-value is greater than 0.05 so in this case we fail to reject the Null hypothesis. Therefore there is no difference in means with a 2 level dose.
+
+## 4. Conclussions
+
+1. If we use the just the supply method, ignoring the level of dosage we conclude that there is no evidence to reject the Null hypothesis, ie no difference in means
+2. If we desagregate the supply method for each level of dosage we can conclude that in 2 out of 3 we fail to reject the null hypothesis. This occurs in dosage levels of 0.5 and 1. For the last dosage level (highest), we fail to reject the null hypothesis, so there is no difference between OJ and VC methods.
+
+## 5. Assumptions
+
+1. Members of the sample population are representative of the entire population.
+2. The variance between groups are different (var.equal = FALSE).
+3. Population are independent there are no mixture between them.
+4. The measures are not paired (paired = FALSE). 
+
